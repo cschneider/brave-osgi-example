@@ -14,7 +14,7 @@ import com.github.kristofa.brave.Brave;
 
 import zipkin.Span;
 import zipkin.reporter.AsyncReporter;
-import zipkin.reporter.urlconnection.URLConnectionSender;
+import zipkin.reporter.kafka08.KafkaSender;
 
 @Component(immediate = true)
 public class BraveExporter {
@@ -30,11 +30,13 @@ public class BraveExporter {
     }
 
     public Brave create() {
+        /*
         URLConnectionSender sender = URLConnectionSender.builder()
             .endpoint("http://localhost:9411/api/v1/spans").build();
+            */
+        KafkaSender sender = KafkaSender.builder().bootstrapServers("kafka:9092").build();
         reporter = AsyncReporter.builder(sender).build();
-        Brave brave = new Brave.Builder("bravetest").reporter(reporter).build();
-        return brave;
+        return new Brave.Builder("bravetest").reporter(reporter).build();
     }
     
     @Deactivate

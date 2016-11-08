@@ -1,0 +1,28 @@
+<features name="brave" xmlns="http://karaf.apache.org/xmlns/features/v1.2.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://karaf.apache.org/xmlns/features/v1.2.0 http://karaf.apache.org/xmlns/features/v1.2.0">
+
+	<feature name="zipkin-core">
+		<bundle dependency="true">mvn:io.zipkin.java/zipkin/1.14.4-SNAPSHOT</bundle>
+		<bundle>mvn:io.zipkin.reporter/zipkin-reporter/0.6.6-SNAPSHOT</bundle>
+		<bundle>mvn:io.zipkin.reporter/zipkin-sender-urlconnection/0.6.6-SNAPSHOT</bundle>
+	</feature>
+	
+	<feature name="zipkin-kafka">
+		<feature>zipkin-core</feature>
+		<bundle dependency="true">mvn:org.apache.servicemix.bundles/org.apache.servicemix.bundles.kafka-clients/0.8.2.2_1</bundle>
+		<bundle>mvn:io.zipkin.reporter/zipkin-sender-kafka08/0.6.6-SNAPSHOT</bundle>
+	</feature>
+
+	<feature name="brave">
+		<feature>zipkin-kafka</feature>
+		<bundle>mvn:io.zipkin.brave/brave-core/3.15.1-SNAPSHOT</bundle>
+	</feature>
+	
+	<feature name="brave-example">
+		<feature>scr</feature>
+		<feature>brave</feature>
+		<bundle>mvn:net.lr/bravetest/0.0.1-SNAPSHOT</bundle>
+	</feature>
+
+</features>
