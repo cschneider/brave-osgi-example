@@ -1,9 +1,5 @@
 package bravetest;
 
-import java.util.Dictionary;
-import java.util.Hashtable;
-import java.util.Map;
-
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
@@ -14,29 +10,30 @@ import com.github.kristofa.brave.Brave;
 
 import zipkin.Span;
 import zipkin.reporter.AsyncReporter;
-import zipkin.reporter.kafka08.KafkaSender;
+import zipkin.reporter.urlconnection.URLConnectionSender;
 
-@Component(immediate = true)
+@Component(immediate=true)
 public class BraveExporter {
 
-    private ServiceRegistration<Brave> reg;
     private AsyncReporter<Span> reporter;
-
+    private ServiceRegistration<Brave> reg;
+    
     @Activate
-    public void activate(BundleContext context, Map<String, String> config) {
-        Brave brave = create();
-        Dictionary<String, ?> props = new Hashtable<String, String>();
-        reg = context.registerService(Brave.class, brave, props);
-    }
-
-    public Brave create() {
-        /*
+    public void activate(BundleContext context) {
         URLConnectionSender sender = URLConnectionSender.builder()
             .endpoint("http://localhost:9411/api/v1/spans").build();
-            */
-        KafkaSender sender = KafkaSender.builder().bootstrapServers("kafka:9092").build();
+        //KafkaSender sender = KafkaSender.builder().bootstrapServers("kafka:9092").build();
         reporter = AsyncReporter.builder(sender).build();
-        return new Brave.Builder("bravetest").reporter(reporter).build();
+        Brave brave = create();
+        reg = context.registerService(Brave.class, brave, null);
+    }
+    
+    public Brave create() {
+        return create("bravetest3");
+    }
+    
+    public Brave create(String name) {
+        return new Brave.Builder(name).reporter(reporter).build();
     }
     
     @Deactivate

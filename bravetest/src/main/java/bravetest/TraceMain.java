@@ -1,14 +1,20 @@
 package bravetest;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+
+import org.apache.cxf.feature.LoggingFeature;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.LocalTracer;
+import com.github.kristofa.brave.jaxrs2.BraveTraceFeature;
 
-@Component(immediate=true)
+@Component(immediate = true, service = TraceMain.class)
 public class TraceMain {
+    @Reference
+    Brave brave;
 
     public static void main(String[] args) {
         TraceMain main = new TraceMain();
@@ -16,14 +22,21 @@ public class TraceMain {
         main.brave = exporter.create();
         main.activate();
     }
-    
-    @Reference
-    Brave brave;
-    
+
+
     @Activate
     public void activate() {
-        LocalTracer tracer = brave.localTracer();
-        tracer.startNewSpan("TraceMain", "activate");
-        tracer.finishSpan(10);
+        Client client = ClientBuilder.newBuilder().register(new BraveTraceFeature(brave)).register(new LoggingFeature()).build();
+        // brave = braveFactory.create("TraceMain");
+        brave.localTracer().trace("TraceMain", "activate", () -> {
+            for (int c = 0; c < 3; c++) {
+                try {
+                    System.out.println("Read simple resource");
+                    client.target("http://localhost:8181/cxf/simple").request().async().get(String.class);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 }
