@@ -9,7 +9,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.jaxrs2.BraveTraceFeature;
+import com.github.kristofa.brave.jaxrs2.BraveTracingFeature;
 
 @Component(immediate = true, service = TraceMain.class)
 public class TraceMain {
@@ -26,9 +26,12 @@ public class TraceMain {
 
     @Activate
     public void activate() {
-        Client client = ClientBuilder.newBuilder().register(new BraveTraceFeature(brave)).register(new LoggingFeature()).build();
-        // brave = braveFactory.create("TraceMain");
-        brave.localTracer().trace("TraceMain", "activate", () -> {
+        Client client = ClientBuilder.newBuilder()
+            .register(BraveTracingFeature.create(brave))
+            .register(new LoggingFeature())
+            .build();
+        try {
+            brave.localTracer().startNewSpan("TraceMain", "activate");
             for (int c = 0; c < 3; c++) {
                 try {
                     System.out.println("Read simple resource");
@@ -37,6 +40,8 @@ public class TraceMain {
                     e.printStackTrace();
                 }
             }
-        });
+        } finally {
+            brave.localTracer().finishSpan();
+        }
     }
 }

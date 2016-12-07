@@ -1,6 +1,6 @@
 package bravetest;
 
-import java.util.Arrays;
+import static java.util.Collections.singletonList;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -14,7 +14,7 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.jaxrs2.BraveTraceFeature;
+import com.github.kristofa.brave.jaxrs2.BraveTracingFeature;
 
 @Component(immediate = true)
 @Path("")
@@ -30,7 +30,7 @@ public class SimpleResource {
         JAXRSServerFactoryBean factory = new JAXRSServerFactoryBean();
         factory.setServiceClass(SimpleResource.class);
         factory.setResourceProvider(SimpleResource.class, new SingletonResourceProvider(this));
-        factory.setProviders(Arrays.asList(new BraveTraceFeature(brave)));
+        factory.setProviders(singletonList(BraveTracingFeature.create(brave)));
         factory.setAddress("/simple");
         server = factory.create();
     }
@@ -42,12 +42,15 @@ public class SimpleResource {
 
     @GET
     public String get() {
-        return brave.localTracer().trace(SimpleResource.class.getName(), "create value", () -> {
+        try {
+            brave.localTracer().startNewSpan(SimpleResource.class.getName(), "create value");
             sleep(100);
             brave.localTracer().submitAnnotation("Counter before call: " + current);
             sleep(200);
             return new Integer(current++).toString();
-        });
+        } finally {
+            brave.localTracer().finishSpan();
+        }
     }
 
     private void sleep(int time) {
